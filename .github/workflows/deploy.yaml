@@ -54,7 +54,7 @@ jobs:
         args: -c |
           echo "Checking database existence..."
           if ! psql -lqt | cut -d \| -f 1 | grep -qw $POSTGRES_DB; then
-            echo "Creating database: $POSTGRES_DB"
+            echo "Creating database $POSTGRES_DB"
             createdb -E UTF8 --template=template0
           else
             echo "Database $POSTGRES_DB already exists, skipping creation"
