@@ -39,11 +39,10 @@ class UserService:
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
         
-        # Обновляем только переданные поля
         for key, value in user_data.model_dump(exclude_unset=True).items():
             if key == "password" and value:
-                # В реальном проекте хэшируем пароль
-                setattr(user, key, value)
+                hashed_password = get_password_hash(value)
+                setattr(user, key, hashed_password)
             elif key != "password":
                 setattr(user, key, value)
         
