@@ -1,0 +1,84 @@
+name: Build and Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+env:
+  DOCKER_IMAGE_NAME: your-image-name
+  SERVER_IP: ${{ secrets.SERVER_IP }}
+  SSH_USER: ${{ secrets.SSH_USER }}
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        push: true
+        tags: |
+          ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+        secrets: |
+          "POSTGRES_USER=${{ secrets.POSTGRES_USER }}"
+          "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}"
+          "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}"
+
+  database-setup:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    steps:
+    - name: Setup PostgreSQL database
+      uses: docker://postgres:13-alpine
+      env:
+        PGUSER: ${{ secrets.POSTGRES_USER }}
+        PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        PGHOST: ${{ secrets.POSTGRES_SERVER }}
+        PGPORT: ${{ secrets.POSTGRES_PORT }}
+      with:
+        entrypoint: /bin/sh
+        args: -c |
+          echo "Checking database existence..."
+          if ! psql -lqt | cut -d \| -f 1 | grep -qw $POSTGRES_DB; then
+            echo "Creating database: $POSTGRES_DB"
+            createdb -E UTF8 --template=template0
+          else
+            echo "Database $POSTGRES_DB already exists, skipping creation"
+          fi
+          
+  deploy:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+
+    steps:
+    - name: Deploy to server
+      run: |
+        ssh deploy-server "\
+          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest && \
+          docker stop fastapi-app || true && \
+          docker rm fastapi-app || true && \
+          docker run -d --name fastapi-app -p 8000:8000 \
+            -e POSTGRES_USER=${{ secrets.POSTGRES_USER }} \
+            -e POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }} \
+            -e POSTGRES_SERVER=${{ secrets.POSTGRES_SERVER }} \
+            -e POSTGRES_PORT=${{ secrets.POSTGRES_PORT }} \
+            -e POSTGRES_DB=${{ secrets.POSTGRES_DB }} \
+            -e JWT_ALGORITHM=${{ secrets.JWT_ALGORITHM }} \
+            -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }} \
+            -e REFRESH_EXPIRE=${{ secrets.REFRESH_EXPIRE }} \
+            -e JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }} \
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
