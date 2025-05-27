@@ -24,6 +24,7 @@ class Order(Base):
     viewers = relationship(
         "User", 
         secondary="order_views",
-        back_populates="viewed_orders"
+        back_populates="viewed_orders",
+        lazy="dynamic"
     )
     reviews = relationship("Review", back_populates="order")

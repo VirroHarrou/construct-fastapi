@@ -17,12 +17,18 @@ async def create_user(
 ):
     return await service.create_user(user_data)
 
-@router.get("/users/", response_model=UserResponse)
+@router.get("/users/{user_id}", response_model=UserResponse)
 async def get_user(
     user_id: UUID = Path(..., description="User ID"),
     service: UserService = Depends(get_user_service),
 ):
     return await service.get_user(user_id)
+
+@router.get("/users/", response_model=UserResponse)
+async def get_me(
+    user: UserResponse = Depends(get_current_user),
+):
+    return user
 
 @router.put("/users/", response_model=UserResponse)
 async def update_user(

@@ -1,4 +1,4 @@
-from fastapi import Depends, Header
+from fastapi import Depends, HTTPException, Header
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
 
@@ -31,3 +31,17 @@ async def get_refresh_token(
     refresh_token: str = Header(..., alias="Refresh-Token")
 ) -> str:
     return refresh_token
+
+async def get_current_user_from_token(
+    token: str,
+    db: AsyncSession  
+) -> UserResponse:
+    auth_service = AuthService(db)
+    try:
+        token_data = auth_service.verify_token(token)
+        user = await db.get(User, token_data.user_id)
+        if not user:
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        return UserResponse.model_validate(user)
+    except JWTError as e:
+        raise HTTPException(status_code=401, detail="Invalid token")

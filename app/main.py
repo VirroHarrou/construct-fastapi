@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from app.config.settings import settings
-from app.controllers import reviews, users, orders, auth, companies
+from app.controllers import reviews, users, orders, auth, companies, chat
 from app.dependencies.database import create_db_and_tables
 
 app = FastAPI(
@@ -8,6 +8,7 @@ app = FastAPI(
     version=settings.PROJECT_VERSION,
 )
 
+app.include_router(chat.router)
 app.include_router(auth.router)
 app.include_router(users.router)
 app.include_router(companies.router)
