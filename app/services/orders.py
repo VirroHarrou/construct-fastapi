@@ -87,22 +87,29 @@ class OrderService:
         return response
     
     async def get_all_orders(self) -> list[OrderResponse]:
-        result = await self.session.execute(select(Order))
+        stmt = select(
+            Order,
+            func.count(OrderView.order_id).label('views_count'),
+            func.max(
+                case(
+                    (OrderView.status == "ожидание", 1),
+                    (OrderView.status == "в работе", 2),
+                    (OrderView.status == "завершен", 3),
+                    else_=0
+                )
+            ).label('status_priority')
+        ).outerjoin(
+            OrderView, Order.id == OrderView.order_id
+        ).group_by(Order.id)
+
+        result = await self.session.execute(stmt)
         orders = []
-        for order in result.scalars().all():
-            views_count = await self.session.scalar(
-                select(func.count()).where(OrderView.order_id == order.id)
-            )
-            status_priority = await self.session.scalar(
-                select(func.max(
-                    case(
-                        (OrderView.status == "ожидание", 1),
-                        (OrderView.status == "в работе", 2),
-                        (OrderView.status == "завершен", 3),
-                        else_=0
-                    )
-                )).where(OrderView.order_id == order.id)
-            )
+        
+        for row in result:
+            order = row[0]
+            views_count = row[1] or 0
+            status_priority = row[2] or 0
+            
             status_map = {
                 1: "ожидание",
                 2: "в работе",
@@ -111,10 +118,10 @@ class OrderService:
             status = status_map.get(status_priority)
             
             order_data = OrderResponse.model_validate(order)
-            order_data.views_count = views_count or 0
+            order_data.views_count = views_count
             order_data.status = status
             orders.append(order_data)
-        
+    
         return orders
     
     async def delete_order(self, order_id: UUID, user_id: UUID) -> None:
