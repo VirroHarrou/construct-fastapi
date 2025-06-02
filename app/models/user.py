@@ -13,6 +13,7 @@ class User(Base):
     phone = Column(String(20), unique=True, index=True)
     address = Column(String(255))
     inn = Column(String(12), unique=True, index=True)
+    image_url = Column(String(511))
     orders = relationship("Order", back_populates="owner")
     viewed_orders = relationship(
         "Order", 

@@ -25,7 +25,7 @@ async def login(
     if not user or not verify_password(password, user.password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect username or password",
+            detail="Incorrect phonenumber or password",
         )
     
     token = await service.create_tokens(user.id)

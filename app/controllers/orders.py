@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, Header, Path, status
 from app.dependencies.auth import get_current_user
 from app.schemas.users import UserResponse
+from app.schemas.view_order import ViewOrderUpdate
 from app.services.orders import OrderService
 from app.schemas.orders import OrderCreate, OrderResponse, OrderUpdate
 from app.dependencies.database import AsyncSession, get_db
@@ -25,16 +26,25 @@ async def create_order(
             detail=str(e)
         ) from e
 
-@router.post("/orders/{order_id}/view")
+@router.post("/orders/{order_id}/view", status_code=204)
 async def mark_order_viewed(
     order_id: UUID,
+    view_data: ViewOrderUpdate,
     user: UserResponse = Depends(get_current_user),
     service: OrderService = Depends(get_order_service),
 ):
-    await service.mark_viewed(user.id, order_id)
-    return {"status": "view marked"}
+    await service.mark_viewed(user.id, order_id, view_data.status)
 
-@router.get("/orders/")
+@router.put("/orders/{order_id}/status", status_code=204)
+async def update_order_status(
+    order_id: UUID,
+    view_data: ViewOrderUpdate,
+    user: UserResponse = Depends(get_current_user),
+    service: OrderService = Depends(get_order_service),
+):
+    await service.mark_viewed(user.id, order_id, view_data.status)
+
+@router.get("/orders/", response_model=list[OrderResponse])
 async def get_all(
     service: OrderService = Depends(get_order_service),
 ):

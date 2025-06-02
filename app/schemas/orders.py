@@ -35,11 +35,8 @@ class OrderCreate(OrderBase):
 class OrderResponse(OrderBase):
     id: UUID4
     user_id: UUID4
-    # viewers
-    
-    # @hybrid_property
-    # def viewers_count(self):
-    #     return len(self.viewers)
+    views_count: int = 0  
+    status: Optional[str] = None  
 
     model_config = ConfigDict(from_attributes=True)
 
