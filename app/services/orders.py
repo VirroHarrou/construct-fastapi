@@ -1,6 +1,7 @@
 from uuid import UUID
 from fastapi import HTTPException, status
-from sqlalchemy import case, func, select
+from sqlalchemy import and_, exists, func, or_, select
+from sqlalchemy.orm import aliased
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order
@@ -8,6 +9,8 @@ from app.models.order_view import OrderView
 from app.schemas.orders import OrderCreate, OrderResponse, OrderUpdate
 
 class OrderService:
+    status_map = {1: "ожидание", 2: "в работе", 3: "завершен"}
+    
     def __init__(self, session: AsyncSession):
         self.session = session
 
@@ -23,10 +26,11 @@ class OrderService:
             raise HTTPException(status_code=404, detail="Order not found")
         
         view = await self.session.get(OrderView, (user_id, order_id))
+        status_num = next((k for k, v in self.status_map.items() if v == status), None)
         if view:
-            view.status = status
+            view.status = status_num
         else:
-            view = OrderView(user_id=user_id, order_id=order_id, status=status)
+            view = OrderView(user_id=user_id, order_id=order_id, status=status_num)
             self.session.add(view)
         await self.session.commit()
         
@@ -65,42 +69,24 @@ class OrderService:
         )
         
         status_priority = await self.session.scalar(
-            select(func.max(
-                case(
-                    (OrderView.status == "ожидание", 1),
-                    (OrderView.status == "в работе", 2),
-                    (OrderView.status == "завершен", 3),
-                    else_=0
-                )
-            )).where(OrderView.order_id == order_id)
+            select(func.max(OrderView.status))
+            .where(OrderView.order_id == order_id)
         )
-        status_map = {
-            1: "ожидание",
-            2: "в работе",
-            3: "завершен"
-        }
-        status = status_map.get(status_priority)
+        status = self.status_map.get(status_priority)
         
         response = OrderResponse.model_validate(order)
         response.views_count = views_count or 0
         response.status = status
         return response
     
-    async def get_all_orders(self) -> list[OrderResponse]:
+    async def get_all_orders(self, offset: int, limit: int) -> list[OrderResponse]:
         stmt = select(
             Order,
             func.count(OrderView.order_id).label('views_count'),
-            func.max(
-                case(
-                    (OrderView.status == "ожидание", 1),
-                    (OrderView.status == "в работе", 2),
-                    (OrderView.status == "завершен", 3),
-                    else_=0
-                )
-            ).label('status_priority')
+            func.max(OrderView.status).label('status_priority') 
         ).outerjoin(
             OrderView, Order.id == OrderView.order_id
-        ).group_by(Order.id)
+        ).group_by(Order.id).offset(offset).limit(limit)
 
         result = await self.session.execute(stmt)
         orders = []
@@ -108,18 +94,11 @@ class OrderService:
         for row in result:
             order = row[0]
             views_count = row[1] or 0
-            status_priority = row[2] or 0
-            
-            status_map = {
-                1: "ожидание",
-                2: "в работе",
-                3: "завершен"
-            }
-            status = status_map.get(status_priority)
+            status_priority = row[2] 
             
             order_data = OrderResponse.model_validate(order)
             order_data.views_count = views_count
-            order_data.status = status
+            order_data.status = self.status_map.get(status_priority)
             orders.append(order_data)
     
         return orders
@@ -139,3 +118,50 @@ class OrderService:
         
         await self.session.delete(order)
         await self.session.commit()
+        
+    async def get_connected_orders(self, user_id: UUID) -> list[OrderResponse]:
+        OrderViewAll = aliased(OrderView)
+        
+        stmt = select(
+            Order,
+            func.count(OrderViewAll.id).label('views_count'),
+            func.max(OrderViewAll.status).label('status_priority')
+        ).outerjoin(
+            OrderViewAll, Order.id == OrderViewAll.order_id
+        ).where(
+            or_(
+                Order.user_id == user_id,
+                and_(
+                    Order.user_id != user_id,
+                    exists().where(
+                        and_(
+                            OrderView.order_id == Order.id,
+                            OrderView.user_id == user_id,
+                            OrderView.status.isnot(None)
+                        )
+                    )
+                )
+            )
+        ).group_by(Order.id)
+
+        result = await self.session.execute(stmt)
+        rows = result.all()
+        
+        orders = []
+        for row in rows:
+            order = row[0]
+            views_count = row[1] or 0
+            status_priority = row[2]
+            
+            order_data = OrderResponse.model_validate(order)
+            order_data.views_count = views_count
+            order_data.status = self.status_map.get(status_priority)
+            orders.append(order_data)
+        
+        if not orders:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Orders not found"
+            )
+        
+        return orders

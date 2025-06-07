@@ -47,8 +47,17 @@ async def update_order_status(
 @router.get("/orders/", response_model=list[OrderResponse])
 async def get_all(
     service: OrderService = Depends(get_order_service),
+    offset: int = 0,
+    limit: int = 20,
 ):
-    return await service.get_all_orders()
+    return await service.get_all_orders(offset, limit)
+
+@router.get("/orders/connected", response_model=list[OrderResponse])
+async def get_connected(
+    service: OrderService = Depends(get_order_service),
+    user: UserResponse = Depends(get_current_user),
+):
+    return await service.get_connected_orders(user_id=user.id)
 
 @router.get("/orders/{order_id}", response_model=OrderResponse)
 async def get_order(

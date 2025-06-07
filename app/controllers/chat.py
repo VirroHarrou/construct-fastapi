@@ -1,9 +1,14 @@
 import json
-from fastapi import APIRouter, WebSocket, Query, WebSocketDisconnect, WebSocketException, status
+from uuid import UUID
+from fastapi import APIRouter, Depends, WebSocket, Query, WebSocketDisconnect, WebSocketException, status
 from fastapi.logger import logger
-from app.services.chat import ConnectionManager
-from app.dependencies.database import async_session
-from app.dependencies.auth import get_current_user_from_token
+from app.schemas.chat_messages import ChatHistoryItem, ChatListItem
+from app.schemas.users import UserResponse
+from app.services.chat import ChatService
+from app.services.connection_manager import ConnectionManager
+from app.dependencies.database import async_session, get_db
+from app.dependencies.auth import get_current_user, get_current_user_from_token
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(tags=["chat"])
 manager = ConnectionManager()
@@ -41,3 +46,27 @@ async def websocket_endpoint(
     except Exception as e:
         await websocket.close(code=status.WS_1011_INTERNAL_ERROR, reason=f"WebSocket error: {e}")
         logger.error(f"WebSocket error: {e}")
+        
+@router.get("/chats/", response_model=list[ChatListItem])
+async def get_user_chats(
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    service = ChatService(db)
+    return await service.get_user_chats(current_user.id)
+
+@router.get("/{partner_id}/messages", response_model=list[ChatHistoryItem])
+async def get_chat_history(
+    partner_id: UUID,
+    current_user: UserResponse = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+    limit: int = 20,
+    offset: int = 0
+):
+    service = ChatService(db)
+    return await service.get_chat_history(
+        current_user.id, 
+        partner_id, 
+        limit, 
+        offset
+    )

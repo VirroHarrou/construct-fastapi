@@ -55,3 +55,15 @@ class ChatMessageResponse(BaseModel):
         model_config = ConfigDict(from_attributes=True)
         from_attributes = True
         populate_by_name = True
+        
+class ChatListItem(BaseModel):
+    id: UUID4
+    username: str
+    last_message: Optional[str]
+    last_message_at: Optional[datetime]
+    
+    class Config:
+        model_config = ConfigDict(from_attributes=True)
+
+class ChatHistoryItem(ChatMessageResponse):
+    pass 
