@@ -5,7 +5,8 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE_NAME: construct-backend:$(git rev-parse --short "$GITHUB_SHA")
+  DOCKER_IMAGE_NAME: construct-backend
+  SHORT_SHA: ${{ github.sha }}
   SERVER_IP: ${{ secrets.SERVER_IP }}
   SSH_USER: ${{ secrets.SSH_USER }}
 
@@ -14,20 +15,31 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    -   name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Get short SHA
+      id: sha
+      run: echo "short_sha=$(git rev-parse --short $GITHUB_SHA)" >> $GITHUB_OUTPUT
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v3
+      with:
           username: ${{ vars.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
-    -   name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-    -   name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+          
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v3
+      
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      
     - name: Build and push Docker image
       uses: docker/build-push-action@v6
       with:
         push: true
         tags: |
+          ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.sha.outputs.short_sha }}
           ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
         secrets: |
           "POSTGRES_USER=${{ secrets.POSTGRES_USER }}"
@@ -45,6 +57,7 @@ jobs:
         PGPASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
         PGHOST: ${{ secrets.POSTGRES_SERVER }}
         PGPORT: ${{ secrets.POSTGRES_PORT }}
+        POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
       with:
         entrypoint: /bin/sh
         args: -c |
@@ -63,8 +76,8 @@ jobs:
     steps:
     - name: Deploy to server
       run: |
-        ssh deploy-server "\
-          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest && \
+        ssh ${{ env.SSH_USER }}@${{ env.SERVER_IP }} "\
+          docker pull ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.sha.outputs.short_sha }} && \
           docker stop fastapi-app || true && \
           docker rm fastapi-app || true && \
           docker run -d --name fastapi-app -p 8000:8000 \
@@ -77,4 +90,4 @@ jobs:
             -e JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }} \
             -e REFRESH_EXPIRE=${{ secrets.REFRESH_EXPIRE }} \
             -e JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }} \
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest"
+            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.sha.outputs.short_sha }}"
