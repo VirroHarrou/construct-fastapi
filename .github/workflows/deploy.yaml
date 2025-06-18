@@ -39,8 +39,8 @@ jobs:
       with:
         push: true
         tags: |
-          ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.sha.outputs.short_sha }}
-          ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
+          ${{ vars.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:${{ steps.sha.outputs.short_sha }}
+          ${{ vars.DOCKERHUB_USERNAME }}/${{ env.DOCKER_IMAGE_NAME }}:latest
         secrets: |
           "POSTGRES_USER=${{ secrets.POSTGRES_USER }}"
           "POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}"
