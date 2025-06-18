@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE_NAME: your-image-name
+  DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE_NAME }}
   SERVER_IP: ${{ secrets.SERVER_IP }}
   SSH_USER: ${{ secrets.SSH_USER }}
 
