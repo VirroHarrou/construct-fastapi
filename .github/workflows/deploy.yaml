@@ -5,7 +5,7 @@ on:
     branches: [ main ]
 
 env:
-  DOCKER_IMAGE_NAME: ${{ env.DOCKER_IMAGE_NAME }}
+  DOCKER_IMAGE_NAME: construct-backend:$(git rev-parse --short "$GITHUB_SHA")
   SERVER_IP: ${{ secrets.SERVER_IP }}
   SSH_USER: ${{ secrets.SSH_USER }}
 
