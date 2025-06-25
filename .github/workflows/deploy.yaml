@@ -48,11 +48,19 @@ jobs:
     steps:
       - name: Checkout code  
         uses: actions/checkout@v4
-        
-      - name: Add server to known hosts
-        run: |
-          mkdir -p ~/.ssh
-          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Setup SSH context
+        id: ssh-context
+        uses: invi5H/ssh-action@v1
+        with:
+          SSH_HOST: ${{ secrets.SERVER_IP }}
+          SSH_USER: ${{ secrets.SSH_USER }}
+          
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
     
       - name: Prepare deployment files
         run: |
@@ -72,11 +80,12 @@ jobs:
 
       - name: Deploy to server
         run: |
-          scp .env deploy-compose.yml ${SSH_USER}@${SERVER_IP}:~/app/
-          ssh ${SSH_USER}@${SERVER_IP} "\
-            cd ~/app && \
-            docker compose -f deploy-compose.yml pull && \
-            docker compose -f deploy-compose.yml down && \
-            docker compose -f deploy-compose.yml up -d"
+          export DOCKER_HOST=ssh://${{ steps.ssh-context.outputs.SERVER }}
+          
+          # Останавливаем и удаляем старые контейнеры
+          docker compose -p fastapi-app down
+          
+          # Запускаем новые контейнеры
+          docker compose -p fastapi-app -f docker-compose.prod.yml up -d
 
 
