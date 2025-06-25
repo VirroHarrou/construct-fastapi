@@ -48,6 +48,11 @@ jobs:
     steps:
       - name: Checkout code  
         uses: actions/checkout@v4
+        
+      - name: Add server to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
     
       - name: Prepare deployment files
         run: |
