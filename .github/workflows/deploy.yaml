@@ -80,15 +80,15 @@ jobs:
           
       - name: Test SSH connection
         run: |
-          ssh -v ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Success!'"
+          ssh -v root@${{ secrets.SERVER_IP }} "echo 'Success!'"
 
       - name: Copy files to server
         run: |
-          scp .env deploy-compose.yml ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }}:~/app/
+          scp .env deploy-compose.yml root@${{ secrets.SERVER_IP }}:~/app/
 
       - name: Deploy to server
         run: |
-          ssh ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} << 'EOF'
+          ssh root@${{ secrets.SERVER_IP }} << 'EOF'
             cd ~/app
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
             docker compose -p fastapi-app -f deploy-compose.yml --env-file .env down
