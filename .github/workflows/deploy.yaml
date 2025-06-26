@@ -61,6 +61,10 @@ jobs:
           echo "REFRESH_EXPIRE=${{ secrets.REFRESH_EXPIRE }}" >> .env
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
           cp docker-compose.prod.yml deploy-compose.yml
+          
+      - name: Test SSH connection
+        run: |
+          ssh -v ${{ secrets.SSH_USER }}@${{ secrets.SERVER_IP }} "echo 'Success!'"
 
       - name: Install SSH key
         run: |
