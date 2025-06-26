@@ -13,6 +13,8 @@ env:
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
+    outputs: 
+      short_sha: ${{ steps.sha.outputs.short_sha }}
 
     steps:
     - name: Checkout code
@@ -62,21 +64,14 @@ jobs:
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
           cp docker-compose.prod.yml deploy-compose.yml
           
-      - name: Install SSH key
+      - name: Setup SSH
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
-          
-      - name: Add SSH key to agent
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          eval $(ssh-agent -s)
+          eval "$(ssh-agent -s)"
           ssh-add ~/.ssh/id_rsa
-          ssh-keyscan ${{ secrets.SERVER_IP }} >> ~/.ssh/known_hosts
+          ssh-keyscan ${{ env.SERVER_IP }} >> ~/.ssh/known_hosts
           
       - name: Test SSH connection
         run: |
@@ -93,4 +88,3 @@ jobs:
             echo "${{ secrets.DOCKERHUB_TOKEN }}" | docker login -u "${{ vars.DOCKERHUB_USERNAME }}" --password-stdin
             docker compose -p fastapi-app -f deploy-compose.yml --env-file .env down
             docker compose -p fastapi-app -f deploy-compose.yml --env-file .env up -d --pull always
-
