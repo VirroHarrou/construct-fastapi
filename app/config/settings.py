@@ -32,9 +32,6 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        
         # Обработка приватного ключа
         self._load_key_files()
         
