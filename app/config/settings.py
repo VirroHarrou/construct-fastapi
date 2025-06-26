@@ -32,12 +32,28 @@ class Settings(BaseSettings):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         
-        if not self.jwt_private_key.startswith('-----'):
-            with open("keys/jwt_private.pem") as f:
-                self.jwt_private_key = f.read()
-                
-        if not self.jwt_public_key.startswith('-----'):
-            with open("keys/jwt_public.pem") as f:
-                self.jwt_public_key = f.read()
+        def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        
+        # Обработка приватного ключа
+        self._load_key_files()
+        
+    def _load_key_files(self):
+        """Загружает ключи из файлов только если они не заданы в environment"""
+        # Для приватного ключа
+        if not self.jwt_private_key:
+            try:
+                with open("keys/jwt_private.pem") as f:
+                    self.jwt_private_key = f.read()
+            except FileNotFoundError:
+                pass  # Файл не существует, оставляем пустым
+        
+        # Для публичного ключа
+        if not self.jwt_public_key:
+            try:
+                with open("keys/jwt_public.pem") as f:
+                    self.jwt_public_key = f.read()
+            except FileNotFoundError:
+                pass  # Файл не существует, оставляем пустым
 
 settings = Settings()
