@@ -28,8 +28,6 @@ class AuthService:
         private_key_file = keys_dir / "jwt_private.pem"
         public_key_file = keys_dir / "jwt_public.pem"
         
-        print(settings.jwt_public_key)
-        
         if settings.jwt_private_key and settings.jwt_public_key:
             private_key = serialization.load_pem_private_key(
                 settings.jwt_private_key.encode(),
@@ -44,7 +42,7 @@ class AuthService:
         
         keys_dir.mkdir(exist_ok=True)
         if not private_key_file.exists() or not public_key_file.exists():
-            raise FileExistsError("")
+            raise FileExistsError("keys files not found")
         else:
             with open(private_key_file, "rb") as f:
                 private_key = serialization.load_pem_private_key(

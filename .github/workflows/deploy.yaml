@@ -62,6 +62,8 @@ jobs:
           echo "JWT_ACCESS_EXPIRE=${{ secrets.JWT_ACCESS_EXPIRE }}" >> .env
           echo "REFRESH_EXPIRE=${{ secrets.REFRESH_EXPIRE }}" >> .env
           echo "JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}" >> .env
+          echo "JWT_PRIVATE_KEY=${{ secrets.JWT_PRIVATE_KEY }}" >> .env
+          echo "JWT_PUBLIC_KEY=${{ secrets.JWT_PUBLIC_KEY }}" >> .env
           cp docker-compose.prod.yml deploy-compose.yml
           
       - name: Setup SSH
