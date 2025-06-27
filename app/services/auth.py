@@ -28,6 +28,8 @@ class AuthService:
         private_key_file = keys_dir / "jwt_private.pem"
         public_key_file = keys_dir / "jwt_public.pem"
         
+        print(settings.jwt_public_key)
+        
         if settings.jwt_private_key and settings.jwt_public_key:
             private_key = serialization.load_pem_private_key(
                 settings.jwt_private_key.encode(),
@@ -38,7 +40,6 @@ class AuthService:
                 settings.jwt_public_key.encode(),
                 backend=default_backend()
             )
-            print(settings.jwt_public_key)
             return private_key, public_key
         
         keys_dir.mkdir(exist_ok=True)
