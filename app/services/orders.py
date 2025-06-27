@@ -124,7 +124,7 @@ class OrderService:
         
         stmt = select(
             Order,
-            func.count(OrderViewAll.id).label('views_count'),
+            func.count(OrderViewAll.order_id).label('views_count'),
             func.max(OrderViewAll.status).label('status_priority')
         ).outerjoin(
             OrderViewAll, Order.id == OrderViewAll.order_id
