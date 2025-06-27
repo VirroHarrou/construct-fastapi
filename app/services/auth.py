@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
 from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.backends import default_backend
 from sqlalchemy import UUID, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -14,23 +16,51 @@ from app.schemas.auth import Token, TokenData
 class AuthService:    
     def __init__(self, session: AsyncSession):
         self.algorithm = settings.jwt_algorithm
-        self.private_key = self._load_private_key()
-        self.public_key = self._load_public_key()
+        self.private_key, self.public_key = self._load_keys()
         self.access_expire = settings.jwt_access_expire
         self.refresh_expire = settings.refresh_expire
         self.refresh_secret = settings.jwt_refresh_secret
         self.session = session
 
-    def _load_private_key(self):
-        return serialization.load_pem_private_key(
-            settings.jwt_private_key.encode(),
-            password=None,
-        )
-
-    def _load_public_key(self):
-        return serialization.load_pem_public_key(
-            settings.jwt_public_key.encode()
-        )
+    def _load_keys(self):
+        """Загружает или генерирует ключи при необходимости"""
+        keys_dir = Path("keys")
+        keys_dir.mkdir(exist_ok=True)
+        private_key_file = keys_dir / "jwt_private.pem"
+        public_key_file = keys_dir / "jwt_public.pem"
+        
+        if settings.jwt_private_key and settings.jwt_public_key:
+            private_key = serialization.load_pem_private_key(
+                settings.jwt_private_key.encode(),
+                password=None,
+                backend=default_backend()
+            )
+            public_key = serialization.load_pem_public_key(
+                settings.jwt_public_key.encode(),
+                backend=default_backend()
+            )
+            return private_key, public_key
+        
+        # Если ключи отсутствуют
+        if not private_key_file.exists() or not public_key_file.exists():
+            raise FileExistsError("")
+        else:
+            with open(private_key_file, "rb") as f:
+                private_key = serialization.load_pem_private_key(
+                    f.read(),
+                    password=None,
+                    backend=default_backend()
+                )
+            with open(public_key_file, "rb") as f:
+                public_key = serialization.load_pem_public_key(
+                    f.read(),
+                    backend=default_backend()
+                )
+        
+        settings.jwt_private_key = private_key
+        settings.jwt_public_key = public_key
+        
+        return private_key, public_key
         
     async def create_tokens(self, user_id: UUID) -> dict:
         access_token = self._create_access_token({"sub":str(user_id)})
