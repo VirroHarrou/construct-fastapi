@@ -17,6 +17,8 @@ services:
       - JWT_ACCESS_EXPIRE=${JWT_ACCESS_EXPIRE}
       - REFRESH_EXPIRE=${REFRESH_EXPIRE}
       - JWT_REFRESH_SECRET=${JWT_REFRESH_SECRET}
+      - JWT_PRIVATE_KEY=${JWT_PRIVATE_KEY}
+      - JWT_PUBLIC_KEY=${JWT_PUBLIC_KEY}
     depends_on:
       db:
         condition: service_healthy
