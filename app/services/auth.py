@@ -25,7 +25,6 @@ class AuthService:
     def _load_keys(self):
         """Загружает или генерирует ключи при необходимости"""
         keys_dir = Path("keys")
-        keys_dir.mkdir(exist_ok=True)
         private_key_file = keys_dir / "jwt_private.pem"
         public_key_file = keys_dir / "jwt_public.pem"
         
@@ -39,9 +38,10 @@ class AuthService:
                 settings.jwt_public_key.encode(),
                 backend=default_backend()
             )
+            print(settings.jwt_public_key)
             return private_key, public_key
         
-        # Если ключи отсутствуют
+        keys_dir.mkdir(exist_ok=True)
         if not private_key_file.exists() or not public_key_file.exists():
             raise FileExistsError("")
         else:
