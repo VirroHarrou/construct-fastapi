@@ -9,8 +9,8 @@ class ChatMessage(Base):
     
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     message = Column(String(512))
-    created_at = Column(DateTime, default=datetime.now(timezone.utc).replace(tzinfo=None))
-    updated_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc))
+    updated_at = Column(DateTime(timezone=True), nullable=True)
     is_edited = Column(Boolean, default=False)
     is_deleted = Column(Boolean, default=False)
     sender_id = Column(UUID(as_uuid=True), ForeignKey("users.id"))

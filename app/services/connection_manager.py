@@ -87,7 +87,7 @@ class ConnectionManager:
         
         message.message = action.content
         message.is_edited = True
-        message.updated_at = datetime.now(timezone.utc).replace(tzinfo=None)
+        message.updated_at = datetime.now(timezone.utc)
         db.commit()
         await self._send_response(message)
 
@@ -102,7 +102,6 @@ class ConnectionManager:
         await self._send_response(message)
 
     async def _send_response(self, message: ChatMessage):
-        logger.error(message.__dict__)
         response = ChatMessageResponse.model_validate(message)
         recipient_ws = self.active_connections.get(message.recipient_id)
         sender_ws = self.active_connections.get(message.sender_id)
