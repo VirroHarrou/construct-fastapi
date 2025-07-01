@@ -107,6 +107,6 @@ class ConnectionManager:
         sender_ws = self.active_connections.get(message.sender_id)
         
         if recipient_ws:
-            await recipient_ws.send_json(response.model_dump_json())
+            await recipient_ws.send_text(response.model_dump_json())
         if sender_ws and message.sender_id != message.recipient_id:
-            await sender_ws.send_json(response.model_dump_json())
+            await sender_ws.send_text(response.model_dump_json())

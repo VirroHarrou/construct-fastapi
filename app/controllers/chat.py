@@ -2,7 +2,7 @@ import json
 from uuid import UUID
 from fastapi import APIRouter, Depends, WebSocket, Query, WebSocketDisconnect, WebSocketException, status
 from fastapi.logger import logger
-from app.schemas.chat_messages import ChatHistoryItem, ChatListItem
+from app.schemas.chat_messages import ChatListItem, ChatMessageResponse
 from app.schemas.users import UserResponse
 from app.services.chat import ChatService
 from app.services.connection_manager import ConnectionManager
@@ -55,7 +55,7 @@ async def get_user_chats(
     service = ChatService(db)
     return await service.get_user_chats(current_user.id)
 
-@router.get("/{partner_id}/messages", response_model=list[ChatHistoryItem])
+@router.get("/{partner_id}/messages", response_model=list[ChatMessageResponse])
 async def get_chat_history(
     partner_id: UUID,
     current_user: UserResponse = Depends(get_current_user),

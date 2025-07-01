@@ -6,7 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.chat_message import ChatMessage
 from app.models.user import User
-from app.schemas.chat_messages import ChatHistoryItem, ChatListItem
+from app.schemas.chat_messages import ChatListItem, ChatMessageResponse
 
 
 class ChatService:
@@ -64,7 +64,7 @@ class ChatService:
         partner_id: UUID,
         limit: int = 50,
         offset: int = 0
-    ) -> list[ChatHistoryItem]:
+    ) -> list[ChatMessageResponse]:
         stmt = select(ChatMessage).where(
             or_(
                 and_(
@@ -81,4 +81,4 @@ class ChatService:
         result = await self.db.execute(stmt)
         messages = result.scalars().all()
         
-        return [ChatHistoryItem.model_validate(msg) for msg in messages]
+        return [ChatMessageResponse.model_validate(msg) for msg in messages]

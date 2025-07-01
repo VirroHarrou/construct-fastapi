@@ -43,7 +43,7 @@ class ChatMessageAction(BaseModel):
 
 class ChatMessageResponse(BaseModel):
     id: UUID4
-    content: str = Field(alias="message")
+    content: str = Field(alias="message", serialization_alias="content")
     created_at: datetime
     updated_at: Optional[datetime]
     is_edited: bool
@@ -64,6 +64,3 @@ class ChatListItem(BaseModel):
     
     class Config:
         model_config = ConfigDict(from_attributes=True)
-
-class ChatHistoryItem(ChatMessageResponse):
-    pass 
