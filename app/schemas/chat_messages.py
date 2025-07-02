@@ -1,5 +1,5 @@
-from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator, model_validator
-from datetime import datetime
+from pydantic import UUID4, BaseModel, ConfigDict, Field, field_serializer, field_validator, model_validator
+from datetime import datetime, timezone
 
 from pydantic import BaseModel
 from datetime import datetime
@@ -50,6 +50,13 @@ class ChatMessageResponse(BaseModel):
     is_deleted: bool
     sender_id: UUID4
     recipient_id: UUID4
+    
+    @field_validator("created_at", "updated_at", mode="before")
+    @classmethod
+    def ensure_timezone(cls, value: datetime) -> datetime:
+        if value and value.tzinfo is None: 
+            return value.replace(tzinfo=timezone.utc) 
+        return value
     
     class Config:
         model_config = ConfigDict(from_attributes=True)
