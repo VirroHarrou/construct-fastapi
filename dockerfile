@@ -11,7 +11,4 @@ COPY . .
 # ARG ENV_FILE=.env
 # COPY ${ENV_FILE} .env
 
-COPY start.sh /app/start.sh
-RUN chmod +x /app/start.sh
-
-CMD ["/app/start.sh"] 
+CMD [ "sh", "-c", "alembic revision --autogenerate -m migration; alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port 8000"]
