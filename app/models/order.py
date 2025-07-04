@@ -17,9 +17,9 @@ class Order(Base):
     image_url = Column(String(512))
     price = Column(Numeric(10, 2))
     address = Column(String(255), nullable=False)
-    begin_time = Column(DateTime, nullable=False)
-    end_time = Column(DateTime, nullable=False)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
+    begin_time = Column(DateTime(timezone=True), nullable=False)
+    end_time = Column(DateTime(timezone=True), nullable=False)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id",ondelete="CASCADE"), nullable=False)
     owner = relationship("User", back_populates="orders")
     viewers = relationship(
         "User", 
@@ -27,4 +27,3 @@ class Order(Base):
         back_populates="viewed_orders",
         lazy="dynamic"
     )
-    reviews = relationship("Review", back_populates="order")

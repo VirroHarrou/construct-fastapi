@@ -14,7 +14,12 @@ class User(Base):
     address = Column(String(255))
     inn = Column(String(12), unique=True, index=True)
     image_url = Column(String(511))
-    orders = relationship("Order", back_populates="owner")
+    orders = relationship(
+        "Order", 
+        back_populates="owner",
+        cascade="all, delete-orphan", 
+        passive_deletes=True
+    )
     viewed_orders = relationship(
         "Order", 
         secondary="order_views",
@@ -26,4 +31,17 @@ class User(Base):
         nullable=True
     )
     company = relationship("Company", back_populates="user")
-    reviews = relationship("Review", back_populates="user")
+    sent_reviews = relationship( 
+        "Review", 
+        foreign_keys="[Review.sender_id]",
+        back_populates="sender",
+        cascade="all, delete",
+        passive_deletes=True
+    )
+    received_reviews = relationship( 
+        "Review", 
+        foreign_keys="[Review.recipient_id]",
+        back_populates="recipient",
+        cascade="all, delete",
+        passive_deletes=True
+    )

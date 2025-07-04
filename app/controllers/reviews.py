@@ -20,12 +20,12 @@ async def create_review(
 ):
     return await service.create_review(user.id, review_data)
 
-@router.get("/orders/{order_id}/reviews", response_model=list[ReviewResponse])
-async def get_order_reviews(
-    order_id: UUID,
+@router.get("/reviews/{user_id}", response_model=list[ReviewResponse])
+async def get_recepient_reviews(
+    user_id: UUID,
     service: ReviewService = Depends(get_review_service),
 ):
-    return await service.get_reviews_by_order(order_id)
+    return await service.get_reviews_by_recipient(user_id)
 
 @router.delete("/reviews/{review_id}", status_code=204)
 async def delete_review(

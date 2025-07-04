@@ -9,6 +9,14 @@ class OrderView(Base):
         Index('ix_order_views_order_id', 'order_id'),
     )
     
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), primary_key=True)
-    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id"), primary_key=True)
-    status = Column(SmallInteger)
+    user_id = Column(UUID(as_uuid=True),
+        ForeignKey("users.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    )
+    order_id = Column(UUID(as_uuid=True),
+        ForeignKey("orders.id", ondelete="CASCADE"),
+        primary_key=True,
+        nullable=False
+    )
+    status = Column(SmallInteger, nullable=True, default=None)

@@ -20,8 +20,8 @@ class OrderBase(BaseModel):
     
     @field_validator('begin_time', 'end_time')
     def check_naive_datetime(cls, value: datetime) -> datetime:
-        if value.tzinfo is not None:
-            raise ValueError("Datetime with timezone is not allowed")
+        if value.tzinfo is None:
+            raise ValueError("Datetime without timezone is not allowed")
         return value
 
     class Config:

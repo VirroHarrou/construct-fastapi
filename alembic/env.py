@@ -1,41 +1,60 @@
+from logging.config import fileConfig
+from sqlalchemy import engine_from_config, pool
+from alembic import context
+import sys
 import os
-from fastapi import FastAPI
-from contextlib import asynccontextmanager
-from alembic.config import Config
-from alembic import command
-from fastapi.logger import logger
+
+# Добавляем корень проекта в sys.path
+sys.path.append(os.path.abspath(os.path.join(os.getcwd(), "..")))
+
+from app.models.base import Base
 from app.config.settings import settings
-from app.controllers import reviews, users, orders, auth, companies, chat
-import asyncio
 
-async def run_migrations():
-    try:
-        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        alembic_ini_path = os.path.join(project_root, "alembic.ini")
-        alembic_cfg = Config(alembic_ini_path)
-        script_location = os.path.join(project_root, "alembic")
-        alembic_cfg.set_main_option("script_location", script_location)
-        await asyncio.to_thread(command.upgrade, alembic_cfg, "head")
-    except Exception as e:
-        logger.error(f"Migration failed: {str(e)}")
-        raise
+config = context.config
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    logger.info("Application startup initiated")
-    await run_migrations()
-    logger.info("Application startup completed")
-    yield
+# Переопределяем URL БД из настроек
+config.set_main_option('sqlalchemy.url', settings.DATABASE_SYNC_URL)
 
-app = FastAPI(
-    title=settings.PROJECT_NAME,
-    version=settings.PROJECT_VERSION,
-    lifespan=lifespan
-)
+# Настройка логгирования
+fileConfig(config.config_file_name)
 
-app.include_router(auth.router)
-app.include_router(users.router)
-app.include_router(companies.router)
-app.include_router(orders.router)
-app.include_router(reviews.router)
-app.include_router(chat.router)
+target_metadata = Base.metadata 
+
+def run_migrations_offline():
+    """Запуск миграций в offline-режиме."""
+    url = config.get_main_option("sqlalchemy.url")
+    context.configure(
+        url=url,
+        target_metadata=target_metadata,
+        literal_binds=True,
+        dialect_opts={"paramstyle": "named"},
+    )
+
+    with context.begin_transaction():
+        context.run_migrations()
+
+def run_migrations_online():
+    """Запуск миграций в online-режиме (асинхронно)."""
+    connectable = context.config.attributes.get("connection", None)
+    
+    if connectable is None:
+        connectable = engine_from_config(
+            config.get_section(config.config_ini_section),
+            prefix="sqlalchemy.",
+            poolclass=pool.NullPool,
+        )
+
+    with connectable.connect() as connection:
+        context.configure(
+            connection=connection,
+            target_metadata=target_metadata, 
+            compare_type=True,
+        )
+
+        with context.begin_transaction():
+            context.run_migrations()
+
+if context.is_offline_mode():
+    run_migrations_offline()
+else:
+    run_migrations_online()

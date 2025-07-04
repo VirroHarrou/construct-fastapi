@@ -25,6 +25,11 @@ class Settings(BaseSettings):
         return f"postgresql+asyncpg://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@" \
                f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
 
+    @property
+    def DATABASE_SYNC_URL(self) -> PostgresDsn:
+        return f"postgresql://{self.POSTGRES_USER}:{self.POSTGRES_PASSWORD}@" \
+               f"{self.POSTGRES_SERVER}:{self.POSTGRES_PORT}/{self.POSTGRES_DB}"
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
