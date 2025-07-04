@@ -11,4 +11,4 @@ COPY . .
 # ARG ENV_FILE=.env
 # COPY ${ENV_FILE} .env
 
-CMD [ "sh", "-c", "RUN mkdir -p /app/alembic/versions; alembic revision --autogenerate -m migration; alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port 8000"]
+CMD [ "sh", "-c", "alembic revision --autogenerate -m migration; alembic upgrade head; uvicorn app.main:app --host 0.0.0.0 --port 8000"]
