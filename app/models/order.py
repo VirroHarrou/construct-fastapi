@@ -15,6 +15,7 @@ class Order(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text)
     image_url = Column(String(512))
+    logo_url = Column(String(512))
     price = Column(Numeric(10, 2))
     address = Column(String(255), nullable=False)
     begin_time = Column(DateTime(timezone=True), nullable=False)

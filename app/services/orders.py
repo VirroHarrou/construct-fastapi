@@ -74,9 +74,19 @@ class OrderService:
         )
         status = self.status_map.get(status_priority)
         
+        waiting_user_ids = await self.session.scalars(
+            select(OrderView.user_id).where(
+                and_(
+                    OrderView.order_id == order_id,
+                    OrderView.status == 1
+                )
+            )
+        )
+        
         response = OrderResponse.model_validate(order)
         response.views_count = views_count or 0
         response.status = status
+        response.waiting_user_ids = list(waiting_user_ids)
         return response
     
     async def get_all_orders(self, offset: int, limit: int) -> list[OrderResponse]:

@@ -5,6 +5,7 @@ from app.schemas.companies import CompanyResponse
 
 class UserBase(BaseModel):
     fio: str = Field(..., max_length=255)
+    description: Optional[str] = None
     phone: str = Field(..., min_length=5, max_length=20)
     address: str = Field(..., max_length=255)
     inn: str = Field(..., min_length=12, max_length=12)
@@ -25,6 +26,7 @@ class UserCreate(UserBase):
 class UserUpdate(BaseModel):
     fio: Optional[str] = Field(None, max_length=255)
     phone: Optional[str] = Field(None, min_length=5, max_length=20)
+    description: Optional[str] = None
     address: Optional[str] = Field(None, max_length=255)
     password: Optional[str] = Field(None, min_length=6, max_length=255)
     image_url: Optional[str] = Field(None, max_length=511)

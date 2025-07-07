@@ -1,12 +1,13 @@
 from datetime import datetime
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
-from typing import Optional
+from typing import List, Optional
 from sqlalchemy.ext.hybrid import hybrid_property
 
 class OrderBase(BaseModel):
     title: str = Field(..., max_length=255)
     description: Optional[str] = None
     image_url: Optional[str] = None
+    logo_url: Optional[str] = None
     price: float = Field(..., gt=0)
     address: str = Field(..., max_length=255)
     begin_time: datetime
@@ -37,6 +38,7 @@ class OrderResponse(OrderBase):
     user_id: UUID4
     views_count: int = 0  
     status: Optional[str] = None  
+    waiting_user_ids: List[UUID4] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -44,6 +46,7 @@ class OrderUpdate(OrderBase):
     title: Optional[str] = Field(None, max_length=255)
     description: Optional[str] = None
     image_url: Optional[str] = None
+    logo_url: Optional[str] = None
     price: Optional[float] = Field(None, gt=0)
     address: Optional[str] = Field(None, max_length=255)
     begin_time: Optional[datetime] = None

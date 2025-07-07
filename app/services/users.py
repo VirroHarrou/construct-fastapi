@@ -43,7 +43,7 @@ class UserService:
             if key == "password" and value:
                 hashed_password = get_password_hash(value)
                 setattr(user, key, hashed_password)
-            elif key != "password":
+            elif key != "password" and key != "phone":
                 setattr(user, key, value)
         
         await self.session.commit()
