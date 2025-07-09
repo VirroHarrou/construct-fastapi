@@ -48,15 +48,21 @@ class ChatService:
             last_message_result = await self.db.execute(last_message_stmt)
             last_message = last_message_result.scalar_one_or_none()
             
+            last_message_response = None
+            if last_message:
+                last_message_response = ChatMessageResponse.model_validate(last_message)
             
             chats.append(ChatListItem(
                 id=partner.id,
                 username=partner.fio,
-                last_message=last_message.message if last_message else None,
-                last_message_at=last_message.created_at if last_message else None
+                last_message=last_message_response
             ))
         
-        return sorted(chats, key=lambda x: x.last_message_at or datetime.min, reverse=True)
+        return sorted(
+            chats,
+            key=lambda x: x.last_message.created_at if x.last_message else datetime.min,
+            reverse=True
+        )
     
     async def get_chat_history(
         self,

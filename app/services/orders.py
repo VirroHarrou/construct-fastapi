@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy import and_, exists, func, or_, select
@@ -90,12 +91,15 @@ class OrderService:
         return response
     
     async def get_all_orders(self, offset: int, limit: int) -> list[OrderResponse]:
+        current_time = datetime.now(timezone.utc) 
         stmt = select(
             Order,
             func.count(OrderView.order_id).label('views_count'),
             func.max(OrderView.status).label('status_priority') 
         ).outerjoin(
             OrderView, Order.id == OrderView.order_id
+        ).where(
+            Order.end_time > current_time 
         ).group_by(Order.id).offset(offset).limit(limit)
 
         result = await self.session.execute(stmt)

@@ -66,8 +66,7 @@ class ChatMessageResponse(BaseModel):
 class ChatListItem(BaseModel):
     id: UUID4
     username: str
-    last_message: Optional[str]
-    last_message_at: Optional[datetime]
+    last_message: Optional[ChatMessageResponse]
     
     class Config:
         model_config = ConfigDict(from_attributes=True)
