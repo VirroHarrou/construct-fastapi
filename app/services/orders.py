@@ -10,7 +10,7 @@ from app.models.order_view import OrderView
 from app.schemas.orders import OrderCreate, OrderResponse, OrderUpdate
 
 class OrderService:
-    status_map = {1: "ожидание", 2: "в работе", 3: "завершен"}
+    STATUS_MAP = {1: "ожидание", 2: "в работе", 3: "завершен"}
     
     def __init__(self, session: AsyncSession):
         self.session = session
@@ -27,12 +27,18 @@ class OrderService:
             raise HTTPException(status_code=404, detail="Order not found")
         
         view = await self.session.get(OrderView, (user_id, order_id))
-        status_num = next((k for k, v in self.status_map.items() if v == status), None)
+        status_num = next((k for k, v in self.STATUS_MAP.items() if v == status), None)
+        
         if view:
-            view.status = status_num
+            current_level = view.status if view.status is not None else 0
+            new_level = status_num if status_num is not None else 0
+            
+            if new_level >= current_level:
+                view.status = status_num
         else:
             view = OrderView(user_id=user_id, order_id=order_id, status=status_num)
             self.session.add(view)
+        
         await self.session.commit()
         
     async def update_order(
@@ -73,13 +79,13 @@ class OrderService:
             select(func.max(OrderView.status))
             .where(OrderView.order_id == order_id)
         )
-        status = self.status_map.get(status_priority)
+        status = self.STATUS_MAP.get(status_priority)
         
         waiting_user_ids = await self.session.scalars(
             select(OrderView.user_id).where(
                 and_(
                     OrderView.order_id == order_id,
-                    OrderView.status == 1
+                    OrderView.status >= 1
                 )
             )
         )
@@ -112,7 +118,7 @@ class OrderService:
             
             order_data = OrderResponse.model_validate(order)
             order_data.views_count = views_count
-            order_data.status = self.status_map.get(status_priority)
+            order_data.status = self.STATUS_MAP.get(status_priority)
             orders.append(order_data)
     
         return orders
@@ -169,7 +175,7 @@ class OrderService:
             
             order_data = OrderResponse.model_validate(order)
             order_data.views_count = views_count
-            order_data.status = self.status_map.get(status_priority)
+            order_data.status = self.STATUS_MAP.get(status_priority)
             orders.append(order_data)
         
         if not orders:

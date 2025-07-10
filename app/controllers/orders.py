@@ -29,11 +29,10 @@ async def create_order(
 @router.post("/orders/{order_id}/view", status_code=204)
 async def mark_order_viewed(
     order_id: UUID,
-    view_data: ViewOrderUpdate,
     user: UserResponse = Depends(get_current_user),
     service: OrderService = Depends(get_order_service),
 ):
-    await service.mark_viewed(user.id, order_id, view_data.status)
+    await service.mark_viewed(user.id, order_id)
 
 @router.put("/orders/{order_id}/status", status_code=204)
 async def update_order_status(
