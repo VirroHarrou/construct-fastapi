@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from app.config.settings import settings
 from app.controllers import reviews, users, orders, auth, companies, chat
 
@@ -13,7 +14,3 @@ app.include_router(companies.router)
 app.include_router(orders.router)
 app.include_router(reviews.router)
 app.include_router(chat.router)
-
-    
-    
-

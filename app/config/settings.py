@@ -12,13 +12,17 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
     POSTGRES_DB: str = "construct"
     
-    jwt_algorithm: str = Field(default="ES256")
-    jwt_access_expire: int = Field(default=3600)
-    jwt_public_key: str = Field(default="")
-    jwt_private_key: str = Field(default="")
+    JWT_ALGORITHM: str = Field(default="ES256")
+    JWT_ACCESS_EXPIRE: int = Field(default=3600)
+    JWT_PUBLIC_KEY: str = Field(default="")
+    JWT_PRIVATE_KEY: str = Field(default="")
     
-    refresh_expire: int = Field(default=604800)
-    jwt_refresh_secret: str = Field(default="")
+    REFRESH_EXPIRE: int = Field(default=604800)
+    JWT_REFRESH_SECRET: str = Field(default="")
+    
+    STORAGE_PATH: str = "storage"
+    ALLOWED_IMAGE_TYPES: list[str] = ["image/jpeg", "image/png", "image/webp"]
+    MAX_IMAGE_SIZE_MB: int = 5
     
     @property
     def DATABASE_URL(self) -> PostgresDsn:
@@ -44,17 +48,17 @@ class Settings(BaseSettings):
         keys_dir.mkdir(exist_ok=True)
         
         # Для приватного ключа
-        if not self.jwt_private_key:
+        if not self.JWT_PRIVATE_KEY:
             private_key_file = keys_dir / "jwt_private.pem"
             if private_key_file.exists():
                 with open(private_key_file) as f:
-                    self.jwt_private_key = f.read()
+                    self.JWT_PRIVATE_KEY = f.read()
         
         # Для публичного ключа
-        if not self.jwt_public_key:
+        if not self.JWT_PUBLIC_KEY:
             public_key_file = keys_dir / "jwt_public.pem"
             if public_key_file.exists():
                 with open(public_key_file) as f:
-                    self.jwt_public_key = f.read()
+                    self.JWT_PUBLIC_KEY = f.read()
 
 settings = Settings()

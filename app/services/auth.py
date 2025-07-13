@@ -2,7 +2,6 @@ from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from fastapi import HTTPException, status
 from jose import JWTError, jwt
-from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.backends import default_backend
 from sqlalchemy import UUID, select
@@ -11,15 +10,15 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config.settings import settings
 from app.models.token import RefreshToken
 from app.utils.security import credentials_exception
-from app.schemas.auth import Token, TokenData
+from app.schemas.auth import TokenData
 
 class AuthService:    
     def __init__(self, session: AsyncSession):
-        self.algorithm = settings.jwt_algorithm
+        self.algorithm = settings.JWT_ALGORITHM
         self.private_key, self.public_key = self._load_keys()
-        self.access_expire = settings.jwt_access_expire
-        self.refresh_expire = settings.refresh_expire
-        self.refresh_secret = settings.jwt_refresh_secret
+        self.access_expire = settings.JWT_ACCESS_EXPIRE
+        self.refresh_expire = settings.REFRESH_EXPIRE
+        self.refresh_secret = settings.JWT_REFRESH_SECRET
         self.session = session
 
     def _load_keys(self):
@@ -28,14 +27,14 @@ class AuthService:
         private_key_file = keys_dir / "jwt_private.pem"
         public_key_file = keys_dir / "jwt_public.pem"
         
-        if settings.jwt_private_key and settings.jwt_public_key:
+        if settings.JWT_PRIVATE_KEY and settings.JWT_PUBLIC_KEY:
             private_key = serialization.load_pem_private_key(
-                settings.jwt_private_key.encode(),
+                settings.JWT_PRIVATE_KEY.encode(),
                 password=None,
                 backend=default_backend()
             )
             public_key = serialization.load_pem_public_key(
-                settings.jwt_public_key.encode(),
+                settings.JWT_PUBLIC_KEY.encode(),
                 backend=default_backend()
             )
             return private_key, public_key
@@ -56,8 +55,8 @@ class AuthService:
                     backend=default_backend()
                 )
         
-        settings.jwt_private_key = private_key
-        settings.jwt_public_key = public_key
+        settings.JWT_PRIVATE_KEY = private_key
+        settings.JWT_PUBLIC_KEY = public_key
         
         return private_key, public_key
         
@@ -77,7 +76,7 @@ class AuthService:
         )
         
     async def _create_refresh_token(self, user_id: UUID) -> str:
-        expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=settings.refresh_expire)
+        expire = datetime.now(timezone.utc).replace(tzinfo=None) + timedelta(seconds=settings.REFRESH_EXPIRE)
         refresh_token = jwt.encode(
             {"sub": str(user_id), "exp": expire},
             self.private_key,
