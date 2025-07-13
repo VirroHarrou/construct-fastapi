@@ -2,6 +2,7 @@ from sqlalchemy import Column, ForeignKey, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from app.config.events import register_model_cleanup
 from app.models.base import Base
 
 class User(Base):
@@ -46,3 +47,5 @@ class User(Base):
         cascade="all, delete",
         passive_deletes=True
     )
+    
+register_model_cleanup(User, ["image_url"])

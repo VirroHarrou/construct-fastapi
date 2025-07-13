@@ -6,7 +6,7 @@ services:
     container_name: fastapi-app
     restart: always
     volumes:
-      - user_images:/app/storage
+      - image_storage:/app/storage
     ports:
       - "8000:8000"
     environment:
@@ -43,4 +43,4 @@ services:
 
 volumes:
   pgdata:
-  user_images:
+  image_storage:

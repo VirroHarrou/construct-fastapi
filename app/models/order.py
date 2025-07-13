@@ -2,6 +2,7 @@ from sqlalchemy import Column, Index, String, Text, Numeric, DateTime, ForeignKe
 from sqlalchemy.orm import relationship
 from sqlalchemy.dialects.postgresql import UUID
 import uuid
+from app.config.events import register_model_cleanup
 from app.models.base import Base
 
 class Order(Base):
@@ -28,3 +29,5 @@ class Order(Base):
         back_populates="viewed_orders",
         lazy="dynamic"
     )
+    
+register_model_cleanup(Order, ["image_url", "logo_url"])

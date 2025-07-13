@@ -38,7 +38,7 @@ class OrderResponse(OrderBase):
     user_id: UUID4
     views_count: int = 0  
     status: Optional[str] = None  
-    waiting_user_ids: List[UUID4] = Field(default_factory=list)
+    connected_user_ids: List[UUID4] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 

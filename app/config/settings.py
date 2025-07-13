@@ -20,9 +20,10 @@ class Settings(BaseSettings):
     REFRESH_EXPIRE: int = Field(default=604800)
     JWT_REFRESH_SECRET: str = Field(default="")
     
-    STORAGE_PATH: str = "storage"
-    ALLOWED_IMAGE_TYPES: list[str] = ["image/jpeg", "image/png", "image/webp"]
-    MAX_IMAGE_SIZE_MB: int = 5
+    IMAGE_STORAGE: Path = Path("/app/storage")  # Docker volume
+    IMAGE_BASE_URL: str = "/storage/images"
+    ALLOWED_EXTENSIONS: set = {".jpg", ".jpeg", ".png", ".webp"}
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024 # 10MB
     
     @property
     def DATABASE_URL(self) -> PostgresDsn:
