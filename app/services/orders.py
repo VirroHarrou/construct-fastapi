@@ -85,7 +85,8 @@ class OrderService:
             select(OrderView.user_id).where(
                 and_(
                     OrderView.order_id == order_id,
-                    OrderView.status == status_priority
+                    OrderView.status == status_priority,
+                    OrderView.status >= 1,
                 )
             )
         )
