@@ -12,7 +12,7 @@ class ReviewService:
     async def create_review(self, user_id: UUID, data: ReviewCreate) -> ReviewResponse:
         review = Review(
             sender_id=user_id,
-            recepient_id=data.recepient_id,
+            recipient_id=data.recipient_id,
             content=data.content,
             rating=data.rating
         )
