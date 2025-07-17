@@ -41,10 +41,13 @@ async def update_order_status(
     user: UserResponse = Depends(get_current_user),
     service: OrderService = Depends(get_order_service),
 ):
-    if view_data.user_id: 
-        await service.mark_viewed(view_data.user_id, order_id, view_data.status)
-    else:
-        await service.mark_viewed(user.id, order_id, view_data.status)
+    target_user_id = view_data.user_id if view_data.user_id else user.id
+    await service.mark_viewed(
+        current_user_id=user.id,  
+        user_id=target_user_id,   
+        order_id=order_id,
+        status=view_data.status
+    )
 
 @router.get("/orders/", response_model=list[OrderResponse])
 async def get_all(

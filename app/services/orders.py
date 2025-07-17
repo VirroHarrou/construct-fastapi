@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from uuid import UUID
 from fastapi import HTTPException, status
 from sqlalchemy import and_, exists, func, or_, select
-from sqlalchemy.orm import aliased
+from sqlalchemy.orm import aliased, joinedload
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.order import Order
@@ -22,14 +22,24 @@ class OrderService:
         await self.session.refresh(new_order)
         return OrderResponse.model_validate(new_order)
 
-    async def mark_viewed(self, user_id: UUID, order_id: UUID, status: str = None) -> None:
-        if not await self.session.get(Order, order_id):
+    async def mark_viewed(
+        self,
+        current_user_id: UUID, 
+        user_id: UUID,         
+        order_id: UUID,
+        status: str = None
+    ) -> None:
+        order = await self.session.get(Order, order_id, options=[joinedload(Order.owner)])
+        if not order:
             raise HTTPException(status_code=404, detail="Order not found")
         
         view = await self.session.get(OrderView, (user_id, order_id))
         status_num = next((k for k, v in self.STATUS_MAP.items() if v == status), None)
-        
+    
         if view:
+            if current_user_id != order.user_id and current_user_id != view.user_id:
+                raise HTTPException(status_code=403, detail="Update not allowed")
+            
             current_level = view.status if view.status is not None else 0
             new_level = status_num if status_num is not None else 0
             
