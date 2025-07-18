@@ -77,29 +77,42 @@ class ConnectionManager:
             )
 
     async def _handle_edit(self, action: ChatMessageAction, user: UserResponse, db: AsyncSession):
-        if not action.message_id or not action.content:
-            raise HTTPException(status_code=400, detail="Invalid request")
+        try:
+            if not action.message_id or not action.content:
+                raise HTTPException(status_code=400, detail="Invalid request")
+            
+            message = await db.get(ChatMessage, action.message_id)
+            
+            if not message or message.sender_id != user.id:
+                raise HTTPException(status_code=403, detail="Permission denied")
+            
+            message.message = action.content
+            message.is_edited = True
+            message.updated_at = datetime.now(timezone.utc)
+            
+            await db.commit()
+            await db.refresh(message)  
+            await self._send_response(message)
         
-        message = await db.get(ChatMessage, action.message_id)
-        
-        if not message or message.sender_id != user.id:
-            raise HTTPException(status_code=403, detail="Permission denied")
-        
-        message.message = action.content
-        message.is_edited = True
-        message.updated_at = datetime.now(timezone.utc)
-        db.commit()
-        await self._send_response(message)
+        except SQLAlchemyError as e:
+            await db.rollback()
+            raise HTTPException(status_code=500, detail="Database error")
 
     async def _handle_delete(self, action: ChatMessageAction, user: UserResponse, db: AsyncSession):
-        message = await db.get(ChatMessage, action.message_id)
+        try:
+            message = await db.get(ChatMessage, action.message_id)
+            
+            if not message or message.sender_id != user.id:
+                raise HTTPException(status_code=403, detail="Permission denied")
+            
+            message.is_deleted = True
+            await db.commit()  
+            await db.refresh(message)  
+            await self._send_response(message)
         
-        if not message or message.sender_id != user.id:
-            raise HTTPException(status_code=403, detail="Permission denied")
-        
-        message.is_deleted = True
-        db.commit()
-        await self._send_response(message)
+        except SQLAlchemyError as e:
+            await db.rollback()
+            raise HTTPException(status_code=500, detail="Database error")
 
     async def _send_response(self, message: ChatMessage):
         response = ChatMessageResponse.model_validate(message)
