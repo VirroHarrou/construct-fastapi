@@ -15,15 +15,18 @@ class ChatService:
 
     async def get_user_chats(self, user_id: UUID) -> list[ChatListItem]:
         stmt = select(User).where(
-            or_(
-                User.id.in_(
-                    select(ChatMessage.sender_id)
-                    .where(ChatMessage.recipient_id == user_id)
+            and_(
+                or_(
+                    User.id.in_(
+                        select(ChatMessage.sender_id)
+                        .where(ChatMessage.recipient_id == user_id)
+                    ),
+                    User.id.in_(
+                        select(ChatMessage.recipient_id)
+                        .where(ChatMessage.sender_id == user_id)
+                    )
                 ),
-                User.id.in_(
-                    select(ChatMessage.recipient_id)
-                    .where(ChatMessage.sender_id == user_id)
-                )
+                ChatMessage.is_deleted != True
             )
         ).distinct()
         
@@ -33,14 +36,17 @@ class ChatService:
         chats = []
         for partner in partners:
             last_message_stmt = select(ChatMessage).where(
-                or_(
-                    and_(
-                        ChatMessage.sender_id == user_id,
-                        ChatMessage.recipient_id == partner.id
-                    ),
-                    and_(
-                        ChatMessage.sender_id == partner.id,
-                        ChatMessage.recipient_id == user_id
+                and_(
+                    ChatMessage.is_deleted != True,
+                    or_(
+                        and_(
+                            ChatMessage.sender_id == user_id,
+                            ChatMessage.recipient_id == partner.id
+                        ),
+                        and_(
+                            ChatMessage.sender_id == partner.id,
+                            ChatMessage.recipient_id == user_id
+                        )
                     )
                 )
             ).order_by(ChatMessage.created_at.desc()).limit(1)
@@ -72,14 +78,17 @@ class ChatService:
         offset: int = 0
     ) -> list[ChatMessageResponse]:
         stmt = select(ChatMessage).where(
-            or_(
-                and_(
-                    ChatMessage.sender_id == user_id,
-                    ChatMessage.recipient_id == partner_id
-                ),
-                and_(
-                    ChatMessage.sender_id == partner_id,
-                    ChatMessage.recipient_id == user_id
+            and_(
+                ChatMessage.is_deleted != True,
+                or_(
+                    and_(
+                        ChatMessage.sender_id == user_id,
+                        ChatMessage.recipient_id == partner_id
+                    ),
+                    and_(
+                        ChatMessage.sender_id == partner_id,
+                        ChatMessage.recipient_id == user_id
+                    )
                 )
             )
         ).order_by(ChatMessage.created_at.desc()).offset(offset).limit(limit)
