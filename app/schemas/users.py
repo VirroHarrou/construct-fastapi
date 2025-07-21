@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator, validator
+from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 
 from app.schemas.companies import CompanyResponse
 
@@ -9,7 +9,6 @@ class UserBase(BaseModel):
     phone: str = Field(..., min_length=5, max_length=20)
     address: str = Field(..., max_length=255)
     inn: str = Field(..., min_length=12, max_length=12)
-    company_id: Optional[str] = None
     image_url: Optional[str] = Field(None, max_length=511)
     
     @field_validator('inn')

@@ -1,6 +1,8 @@
 from fastapi import Depends, HTTPException, Header
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from jose import JWTError
+from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.utils.security import credentials_exception
 from app.models.user import User
@@ -20,7 +22,11 @@ async def get_current_user(
     auth_service = AuthService(db)
     try:
         token_data = auth_service.verify_token(credentials.credentials)
-        user = await db.get(User, token_data.user_id)
+        stmt = select(User).where(User.id == token_data.user_id).options(
+            selectinload(User.company)
+        )
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
         if not user:
             raise credentials_exception
         return UserResponse.model_validate(user)
@@ -39,7 +45,11 @@ async def get_current_user_from_token(
     auth_service = AuthService(db)
     try:
         token_data = auth_service.verify_token(token)
-        user = await db.get(User, token_data.user_id)
+        stmt = select(User).where(User.id == token_data.user_id).options(
+            selectinload(User.company)
+        )
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
         if not user:
             raise HTTPException(status_code=401, detail="Invalid credentials")
         return UserResponse.model_validate(user)
