@@ -8,7 +8,7 @@ class CompanyService:
         self.session = session
 
     async def create_company(self, data: CompanyCreate) -> CompanyResponse:
-        company = Company(**CompanyCreate.model_dump())
+        company = Company(**data.model_dump())
         self.session.add(company)
         await self.session.commit()
         await self.session.refresh(company)
